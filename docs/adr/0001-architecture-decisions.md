@@ -4,16 +4,16 @@
 **Accepted** (2026-10-11)
 
 ## Context
-**Vighnesh AgroCare** is an agricultural input retail platform operating in Andhra Pradesh, India. The application manages critical operational domains:
-1. High-concurrency inventory reservation for seasonal agricultural inputs (fertilizers, pesticides, seeds).
-2. Point-of-sale (POS) counter billing and Maximum Retail Price (MRP) statutory compliance.
+**Vighnesh AgroCare** is a retail pesticide platform operating in Andhra Pradesh, India. The application manages critical operational domains:
+1. High-concurrency inventory reservation for seasonal crop protection agrochemicals (insecticides, fungicides, herbicides).
+2. Counter sales billing and Maximum Retail Price (MRP) statutory compliance.
 3. Inventory accounting using the Weighted Average Cost (WAC) method and an immutable stock movements ledger.
 4. Customer credit (udhaar) accounting with individual credit limits.
 
 Modern web architectures often default to placing business logic either inside client-side JavaScript applications or in an intermediary Node.js/serverless backend tier, utilizing the database merely as a dumb relational store.
 
 In our stack (React, Vite, Supabase, PostgreSQL), allowing the client browser application to coordinate multi-step transactions (e.g. read stock -> check stock -> compute subtotal -> write booking -> write stock movement) introduces severe vulnerabilities:
-- **Concurrency & Race Conditions**: In high-demand scenarios (such as seasonal fertilizer arrivals), network latency between client reads and writes makes race conditions virtually inevitable, leading to overselling.
+- **Concurrency & Race Conditions**: In high-demand scenarios (such as sudden pest outbreaks during cotton or paddy season), network latency between client reads and writes makes race conditions virtually inevitable, leading to overselling.
 - **Client-Side Tampering**: Trusting the browser to enforce business invariants (such as `selling_price <= mrp`, credit limits, or stock deductions) creates significant security risks, as client-side code can be inspected, altered, or bypassed.
 - **Network Overhead & Partial Failures**: Orchestrating multi-table operations over multiple HTTP roundtrips on unreliable 3G/4G cellular connections in rural Andhra Pradesh increases failure rates, leaving databases in half-written or inconsistent states.
 - **Leaky Security Model**: Permitting direct write access from the client browser to core tables requires overly complex Row Level Security (RLS) policies that are difficult to audit and maintain.

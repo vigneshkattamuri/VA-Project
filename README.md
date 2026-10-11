@@ -7,11 +7,11 @@
 
 ## 1. Project Purpose & Scope
 
-**Vighnesh AgroCare** is a production-grade Progressive Web Application (PWA) designed specifically for an agricultural retail store in **Andhra Pradesh, India**. The store specializes in retailing fertilizers, pesticides, insecticides, plant growth regulators, bio-inputs, and seeds to local farmers.
+**Vighnesh AgroCare** is a production-grade Progressive Web Application (PWA) designed specifically for a retail pesticide shop in **Andhra Pradesh, India**. The store specializes in retailing crop protection agrochemicals (insecticides, fungicides, herbicides, acaricides, nematicides, rodenticides, and bio-pesticides) to local farmers (see [Decision D18](docs/00-decisions-log.md) for business scope).
 
 The application delivers two integrated interfaces:
-1. **Farmer & Customer PWA (English & Telugu)**: A fast, lightweight, mobile-optimized experience allowing farmers to browse agricultural inputs, check real-time stock availability and Maximum Retail Prices (MRP), place 24-hour product reservations, and initiate local deliveries or shop pickups with one-tap WhatsApp integration.
-2. **Owner & Staff Operations Portal (`/admin`)**: A comprehensive management dashboard providing fast counter sales (POS), goods receipt with batch and expiry logging, automated Weighted Average Cost (WAC) recalculation, customer credit (udhaar) ledger tracking, supplier management, and business analytics.
+1. **Farmer & Customer PWA (English & Telugu)**: A fast, lightweight, mobile-optimized experience allowing farmers to browse crop protection products, check real-time stock availability and Maximum Retail Prices (MRP), place 24-hour product reservations, and initiate local deliveries or shop pickups with one-tap WhatsApp integration.
+2. **Owner & Staff Operations Portal (`/admin`)**: A comprehensive management dashboard providing fast counter sales and billing, goods receipt with batch and expiry logging, automated Weighted Average Cost (WAC) recalculation, customer credit (udhaar) ledger tracking, supplier management, and business analytics.
 
 ---
 
@@ -54,14 +54,14 @@ The technology stack is finalized as follows:
 
 Detailed architectural and operational documentation is available in the [`docs/`](docs/) directory:
 
-- [**00-decisions-log.md**](docs/00-decisions-log.md): Record of foundational architectural and product decisions (D01–D17), covering costing methods, reservation lifecycles, and role models.
+- [**00-decisions-log.md**](docs/00-decisions-log.md): Record of foundational architectural and product decisions (D01–D20), covering scope (pesticides only), costing methods, reservation lifecycles, and role models.
 - [**01-requirements.md**](docs/01-requirements.md): Comprehensive functional and non-functional requirements organized across 14 domain modules.
 - [**02-architecture.md**](docs/02-architecture.md): System architecture overview, text architecture diagram, PL/pgSQL function specifications, and planned Phase 2 source tree.
 - [**03-security-model.md**](docs/03-security-model.md): Role-Based Access Control (RBAC) matrix, Row Level Security (RLS) rules, PII classification, and PWA caching policies.
 - [**04-inventory-rules.md**](docs/04-inventory-rules.md): Inventory accounting invariants (`physical`, `reserved`, `available`), append-only ledger movement types, 24-hour reservation lifecycle, and Weighted Average Costing (WAC) worked example.
 - [**05-roadmap.md**](docs/05-roadmap.md): The 20 implementation phases with specific goals and acceptance criteria.
 - [**06-test-strategy.md**](docs/06-test-strategy.md): Testing pyramid (unit, integration, e2e) and test plans for 9 critical edge cases (concurrency, race conditions, duplicate receipts, unauthorized access).
-- [**07-legal-checklist.md**](docs/07-legal-checklist.md): Mandatory statutory and regulatory verification items for Andhra Pradesh agricultural retail (pesticide/fertilizer licensing, GST invoicing, record-keeping).
+- [**07-legal-checklist.md**](docs/07-legal-checklist.md): Mandatory statutory and regulatory verification items under the Insecticides Act, 1968, Insecticides Rules, 1971, and GST rules for Andhra Pradesh pesticide retail.
 - [**adr/0001-architecture-decisions.md**](docs/adr/0001-architecture-decisions.md): Architecture Decision Record detailing why core business logic is encapsulated in PostgreSQL stored functions rather than client-side code.
 
 ---

@@ -37,9 +37,10 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ---
 
 ### Phase 4: Database Schema & Supabase Migrations
-- **Goal**: Author reproducible SQL migrations defining tables, relations, constraints, and audit columns.
+- **Goal**: Author reproducible SQL migrations defining tables, relations, constraints, and audit columns for retail pesticides.
 - **Acceptance Criteria**:
-  - [ ] Migrations for `products`, `product_stock`, `inventory_movements`, `suppliers`, `purchases`, `sales`, `bookings`, `customer_credit_ledger`, and `shop_settings`.
+  - [ ] Migrations for `products` (including CIB&RC registration, active ingredient, formulation, toxicity colour class, batch/mfg/expiry), `product_stock`, `inventory_movements`, `suppliers`, `purchases`, `sales`, `bookings`, `customer_credit_ledger`, and `shop_settings`.
+  - [ ] Revisit batch-level stock model per Decision D02.
   - [ ] Constraints enforced (`selling_price <= mrp`, `physical_stock >= 0`, `reserved_stock >= 0`).
   - [ ] Append-only movement types defined.
   - [ ] Migration applied cleanly to local/development Supabase instance.
@@ -58,22 +59,23 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ---
 
 ### Phase 6: Customer Home & Product Catalog
-- **Goal**: Deliver a high-performance, mobile-first product browsing experience in English and Telugu.
+- **Goal**: Deliver a high-performance, mobile-first crop protection browsing experience in English and Telugu.
 - **Acceptance Criteria**:
-  - [ ] Categorized browsing (Fertilizers, Pesticides, Seeds, PGR, Bio-products).
+  - [ ] Categorized browsing (Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides).
   - [ ] Pack size selector per product card with dynamic MRP and selling price display.
   - [ ] Real-time available stock badges (`In Stock`, `Low Stock`, `Out of Stock`).
-  - [ ] Search and filter by brand, crop, pest, and formulation.
+  - [ ] Search and filter by brand, crop, pest, formulation, and toxicity class.
+  - [ ] Strict display of shop-entered safety and label instructions without automated claims.
 
 ---
 
 ### Phase 7: Admin Product & Category Management
-- **Goal**: Build management interfaces for creating, editing, and categorizing sellable products and pack sizes.
+- **Goal**: Build management interfaces for creating, editing, and categorizing sellable pesticide products and pack sizes.
 - **Acceptance Criteria**:
-  - [ ] Admin forms to create and edit products with independent pack sizes.
-  - [ ] Product-level flags: `allow_online_booking`, `allow_home_delivery`, `requires_manual_review`.
-  - [ ] MRP and selling price validation rules.
-  - [ ] Category and crop tag management screens.
+  - [ ] Admin forms to create and edit products with independent pack sizes and D20 statutory fields.
+  - [ ] Product-level flags: `allow_online_booking`, `allow_home_delivery` (defaults to false), `requires_manual_review`.
+  - [ ] MRP and selling price validation rules (`selling_price <= mrp`).
+  - [ ] Category and target pest tag management screens.
 
 ---
 
@@ -90,7 +92,7 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ### Phase 9: Supplier Management
 - **Goal**: Create protected supplier master directory for store administration.
 - **Acceptance Criteria**:
-  - [ ] CRUD operations for chemical/fertilizer manufacturers and distributors.
+  - [ ] CRUD operations for licensed pesticide manufacturers and authorized distributors.
   - [ ] Storage of legal trade name, GSTIN, primary contacts, and credit terms.
   - [ ] Strict RLS enforcement ensuring supplier data is inaccessible to `employee` and `delivery` roles.
 
@@ -107,10 +109,10 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ---
 
 ### Phase 11: Shopping Cart & Customer Checkout Flow
-- **Goal**: Build a persistent client-side cart and checkout flow supporting pickup and village delivery options.
+- **Goal**: Build a persistent client-side cart and checkout flow supporting pickup and local delivery options.
 - **Acceptance Criteria**:
   - [ ] Cart drawer/view with live stock checks against `available_stock`.
-  - [ ] Selection between Store Pickup and Home/Village Delivery.
+  - [ ] Selection between Store Pickup and Home/Village Delivery (conditioned on `allow_home_delivery`).
   - [ ] Guest checkout flow requiring Name, Phone, and Village with CAPTCHA rate-limiting.
   - [ ] Clear order summary displaying tax-inclusive pricing.
 
@@ -137,14 +139,14 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 
 ---
 
-### Phase 14: Sales (POS), Receipts & Payments
-- **Goal**: Build rapid counter sales (POS) interface with multiple payment modes and thermal receipt generation.
+### Phase 14: Sales, Invoicing & Payments
+- **Goal**: Build rapid counter sales billing interface with multiple payment modes and thermal receipt generation.
 - **Acceptance Criteria**:
   - [ ] Fast item lookup and barcode/SKU selection for walk-in counter sales.
   - [ ] Conversion of online bookings into finalized sales.
   - [ ] Atomic `complete_sale` execution validating `selling_price <= mrp`.
   - [ ] Support for Cash, UPI QR, and Split Tender.
-  - [ ] Formatted 3-inch (80mm) thermal receipt view and PDF/printable bill.
+  - [ ] Formatted 3-inch (80mm) thermal receipt view and printable bill.
 
 ---
 
@@ -183,7 +185,7 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 - **Acceptance Criteria**:
   - [ ] Vitest unit tests verifying WAC formulas, tax math, and date helpers.
   - [ ] Supabase SQL tests validating PL/pgSQL functions and RLS boundary isolation.
-  - [ ] Playwright E2E tests validating concurrent bookings, checkout, and admin POS.
+  - [ ] Playwright E2E tests validating concurrent bookings, checkout, and admin counter billing.
   - [ ] Automated security audit confirming zero public exposure of service role keys or supplier costs.
 
 ---

@@ -4,7 +4,7 @@
 
 The system strictly enforces the principle of least privilege across all user tiers. There are four discrete system roles:
 1. **`admin`**: Store owner / primary manager. Unrestricted administrative and financial authority.
-2. **`employee`**: Shop counter sales assistant. Operates counter POS, searches catalog, views stock availability, fulfills customer bookings. Prohibited from viewing purchase costs, supplier records, margins, and profit analytics.
+2. **`employee`**: Shop counter sales assistant. Operates counter billing, searches catalog, views stock availability, fulfills customer bookings. Prohibited from viewing purchase costs, supplier records, margins, and profit analytics.
 3. **`delivery`**: Field delivery agent. Dispatches and delivers local customer orders. Strictly limited to assigned delivery orders, customer address/contact, and marking delivery/payment status.
 4. **`customer`**: Retail buyer / local farmer. Can browse public catalog, manage personal cart, create bookings, view personal order history, and update personal profile.
 
@@ -22,7 +22,7 @@ The system strictly enforces the principle of least privilege across all user ti
 | **Suppliers Directory (Read / Write)** | No | **No (Blocked)** | No | Yes |
 | **Purchase Orders & Goods Receipt** | No | **No (Blocked)** | No | Yes |
 | **Product Cost Price / Purchase Invoices** | No | **No (Blocked)** | No | Yes |
-| **Sales Counter / POS Billing** | No | Yes | No | Yes |
+| **Sales Counter & Billing** | No | Yes | No | Yes |
 | **Customer Credit Ledger (Udhaar) (Read)** | Own Balance | Read Balance | No | Full Read |
 | **Modify Customer Credit Limits** | No | No | No | Yes |
 | **Online Bookings (Create)** | Yes (Own / Guest) | Yes (Walk-in) | No | Yes |
@@ -41,7 +41,7 @@ The system strictly enforces the principle of least privilege across all user ti
   - Roles are stored in a dedicated `user_roles` table (`user_id`, `role`, `created_at`, `assigned_by`) outside the editable `profiles` table.
   - The `user_roles` table is protected by PostgreSQL RLS with `INSERT`, `UPDATE`, and `DELETE` policies restricted strictly to authenticated users with the `admin` role.
   - User registration via Supabase Auth defaults automatically to the `customer` role via a database trigger.
-  - Elevated roles (`employee`, `delivery`, `admin`) can only be provisioned through an explicit admin action or manual database seed during initial setup.
+  - Elevated roles (`employee`, `delivery`, `admin`) can only be provisioned through an explicit admin action or initial setup script during deployment.
 
 ---
 
@@ -84,14 +84,14 @@ Because all core business logic is encapsulated in PostgreSQL stored functions e
 
 ## 6. Personally Identifiable Information (PII) Protection
 
-Agricultural retail involves sensitive customer personal data. The system categorizes and protects PII in accordance with Indian Digital Data Protection standards:
+Pesticide retail involves sensitive customer personal data. The system categorizes and protects PII in accordance with Indian Digital Data Protection standards:
 
 ### Identified PII Data Elements
 - Customer Full Name
 - Primary Mobile Phone Number
 - Village, Mandal, and District Details
 - Street / Farm Delivery Address
-- Purchase & Consumption History (crop types and chemical usage)
+- Purchase & Consumption History (crop types and pesticide usage)
 - Credit Ledger Balances (Udhaar financial standing)
 
 ### Safeguards

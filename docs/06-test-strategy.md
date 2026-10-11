@@ -2,7 +2,7 @@
 
 ## 1. Testing Philosophy & Governance
 
-Agricultural retail involves real financial transactions, tight margins, and volatile inventory demands during peak sowing seasons. Faulty stock reservations or inaccurate credit ledgers directly impact farmer livelihoods and store profitability.
+Pesticide retail involves real financial transactions, strict regulatory accountability, and volatile inventory demands during peak pest seasons. Faulty stock reservations or inaccurate credit ledgers directly impact farmer crop protection and store profitability.
 
 > **CRITICAL VERIFICATION RULE**:
 > Tests are **only reported as passing after they have actually run and succeeded** in an active test execution environment. In this initial documentation and architecture phase (Phase 1), **no test suites exist or have been executed**.
@@ -15,7 +15,7 @@ Agricultural retail involves real financial transactions, tight margins, and vol
                      / \
                     /   \
                    / E2E \       Playwright
-                  /-------\      (Browser flows, booking, POS checkout)
+                  /-------\      (Browser flows, booking, counter checkout)
                  /  Integ  \     React Testing Library + Supabase SQL/pgTAP
                 /-----------\    (Component integration & Database Stored RPCs)
                /  Unit Tests \   Vitest
@@ -35,6 +35,7 @@ Agricultural retail involves real financial transactions, tight margins, and vol
   - Form validation states (preventing submission when stock is exceeded or required fields are missing).
   - Cart state persistence across mock page reloads.
   - Language toggle switching string dictionaries seamlessly.
+  - Verification that safety and label instructions are rendered verbatim without alterations.
 - **Database Stored RPC & RLS Integration (pgTAP / SQL Test Runner)**:
   - Direct execution of `create_booking`, `receive_purchase`, `complete_sale`, `adjust_stock`.
   - Verification of constraint triggers (`selling_price <= mrp`, `available_stock >= 0`).
@@ -42,11 +43,11 @@ Agricultural retail involves real financial transactions, tight margins, and vol
 
 ### 2.3 End-to-End Tests (Playwright)
 - **Customer Journey**:
-  - Browse bilingual catalog in Telugu -> add products to cart -> proceed to checkout -> submit booking -> verify 24h timer and WhatsApp redirect link.
+  - Browse bilingual pesticide catalog in Telugu -> add products to cart -> proceed to checkout -> submit booking -> verify 24h timer and WhatsApp redirect link.
 - **Store Staff Counter Journey**:
-  - Login as employee -> open POS screen -> lookup booking -> convert to counter sale -> record Cash payment -> print receipt.
+  - Login as employee -> open counter sales screen -> lookup booking -> convert to counter sale -> record Cash payment -> print receipt.
 - **Admin Workflow**:
-  - Login as admin -> ingest goods receipt -> verify inventory count and WAC update -> check profit reports.
+  - Login as admin -> ingest goods receipt with batch and expiry -> verify inventory count and WAC update -> check profit reports.
 
 ---
 
@@ -55,11 +56,11 @@ Agricultural retail involves real financial transactions, tight margins, and vol
 The test suite must specifically target and validate the following 9 mission-critical edge cases:
 
 ### EC-01: Insufficient Stock
-- **Scenario**: A customer attempts to add or book 5 units of an item when `available_stock` is only 2.
+- **Scenario**: A customer attempts to add or book 5 bottles of *Chlorpyrifos 20% EC 1L* when `available_stock` is only 2.
 - **Expected Behavior**: The UI blocks incrementing beyond available stock. If bypassed, the `create_booking` stored function raises an exception: `"Insufficient available stock"` and rolls back the transaction entirely.
 
 ### EC-02: Simultaneous Bookings (Race Condition)
-- **Scenario**: Two farmers attempt to book the final remaining bottle of a high-demand pesticide at the exact same millisecond.
+- **Scenario**: Two farmers attempt to book the final remaining bottle of *Imidacloprid 17.8% SL 100 ml* at the exact same millisecond during a pest outbreak.
 - **Expected Behavior**: PostgreSQL `SELECT ... FOR UPDATE` row locks force serial execution. The first transaction succeeds and reserves the bottle. The second transaction immediately encounters `available_stock = 0`, is rejected cleanly with an out-of-stock message, and no negative stock is created.
 
 ### EC-03: Duplicate Submission (Double Clicks / Retries)
@@ -75,7 +76,7 @@ The test suite must specifically target and validate the following 9 mission-cri
 - **Expected Behavior**: The purchase receipt requires a unique supplier invoice number and idempotency token. Re-submission is rejected, preventing accidental double-counting of physical inventory or inaccurate WAC inflation.
 
 ### EC-06: Duplicate Counter Sale Submission
-- **Scenario**: A POS counter sale is triggered twice during rapid checkout or payment barcode scanning.
+- **Scenario**: A counter sale is triggered twice during rapid checkout or payment barcode scanning.
 - **Expected Behavior**: Transaction idempotency validates payment and sale creation; duplicate transaction requests fail or return the existing invoice record without double-deducting physical stock.
 
 ### EC-07: Unauthorized Database Access Attempt

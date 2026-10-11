@@ -33,12 +33,12 @@ All inventory alterations are governed by an immutable, append-only transaction 
 | Movement Type | Physical Stock Impact | Reserved Stock Impact | Description / Trigger |
 | :--- | :---: | :---: | :--- |
 | `purchase_receipt` | **+ (Increase)** | None | Ingestion of received stock from supplier invoice. |
-| `sale` | **- (Decrease)** | **- (Decrease if fulfilling booking)** | Counter POS sale or fulfilled customer booking. |
+| `sale` | **- (Decrease)** | **- (Decrease if fulfilling booking)** | Counter billing sale or fulfilled customer booking. |
 | `reservation` | None | **+ (Increase)** | Creation of an online customer booking. |
 | `reservation_release` | None | **- (Decrease)** | Cancellation or 24-hour timeout of a booking. |
 | `adjustment_in` | **+ (Increase)** | None | Physical stock count audit finding excess stock. |
 | `adjustment_out` | **- (Decrease)** | None | Physical stock count audit finding missing stock. |
-| `damage` | **- (Decrease)** | None | Broken bottle, punctured bag, or handling leakage. |
+| `damage` | **- (Decrease)** | None | Broken bottle, punctured packet, or chemical leakage. |
 | `expiry` | **- (Decrease)** | None | Product surpassed manufacturer expiry date. |
 | `customer_return` | **+ (Increase)** | None | Customer returns undamaged item with valid receipt. |
 | `supplier_return` | **- (Decrease)** | None | Return of damaged/recalled goods to distributor. |
@@ -47,7 +47,7 @@ All inventory alterations are governed by an immutable, append-only transaction 
 
 ## 3. Booking Reservation Lifecycle
 
-Online bookings lock stock for up to **24 hours** to prevent farmers from traveling to the shop only to find seasonal inputs sold out, while ensuring inventory does not remain blocked indefinitely.
+Online bookings lock stock for up to **24 hours** to prevent farmers from traveling to the shop only to find seasonal crop protection products sold out, while ensuring inventory does not remain blocked indefinitely.
 
 ```
        +-----------------------+
@@ -107,7 +107,7 @@ Online bookings lock stock for up to **24 hours** to prevent farmers from travel
 
 ## 4. Concurrency Safety & Race Condition Prevention
 
-High demand for seasonal fertilizers (e.g. Urea, Complex NPK) can cause hundreds of simultaneous booking attempts when fresh stock arrives.
+High demand for seasonal pesticides during sudden pest attacks (e.g. pink bollworm outbreaks in cotton or brown planthopper attacks in paddy) can cause hundreds of simultaneous booking attempts when fresh consignments arrive.
 
 ### Concurrency Rules
 1. **Row-Level Locking**: Every inventory mutation MUST obtain an exclusive row lock on `product_stock` using `SELECT ... FOR UPDATE` before reading or updating stock balances. This forces concurrent transactions into an orderly, serial queue.
@@ -120,7 +120,7 @@ High demand for seasonal fertilizers (e.g. Urea, Complex NPK) can cause hundreds
 
 ## 5. Weighted Average Cost (WAC) Method
 
-AgroCare tracks inventory valuation using the **Weighted Average Cost (WAC)** method. Because retail sales of fertilizers and pesticides occur rapidly over the counter, scanning specific batch purchase costs at POS is operationally unfeasible.
+AgroCare tracks inventory valuation using the **Weighted Average Cost (WAC)** method. Because retail sales of agrochemicals occur rapidly over the counter, scanning specific batch purchase costs during rapid counter billing is operationally unfeasible.
 
 ### Definition & Formula
 When new inventory arrives via a purchase receipt:

@@ -2,13 +2,13 @@
 
 ## 1. Architectural Strategy
 
-**Vighnesh AgroCare** is structured as a high-performance single-page Progressive Web Application (PWA) with a headless, database-centric backend powered by Supabase and PostgreSQL.
+**Vighnesh AgroCare** is structured as a high-performance single-page Progressive Web Application (PWA) with a headless, database-centric backend powered by Supabase and PostgreSQL, tailored specifically for a retail pesticide shop in Andhra Pradesh, India.
 
 ### Core Architectural Principles
-1. **Single Frontend Application with Segmented Layouts**: A unified React + TypeScript codebase serves both public agricultural customers (farmers) and internal store operators via distinct route hierarchies and layouts:
-   - Customer Portal (`/`): Lightweight, mobile-first, bilingual (English/Telugu), optimized for fast browsing, cart management, and booking.
-   - Admin & Staff Portal (`/admin`): Desktop/tablet-optimized, POS billing counter, inventory audit, goods receipt, delivery management, and reports.
-2. **Database-Centric Business Logic (PL/pgSQL Functions)**: All critical business transactions—such as stock reservations, booking transitions, purchase receipts, inventory adjustments, point-of-sale billing, and payment processing—execute exclusively inside PostgreSQL stored functions. The frontend browser **never** writes directly to inventory or financial tables.
+1. **Single Frontend Application with Segmented Layouts**: A unified React + TypeScript codebase serves both public customers (farmers) and internal store operators via distinct route hierarchies and layouts:
+   - Customer Portal (`/`): Lightweight, mobile-first, bilingual (English/Telugu), optimized for fast browsing of crop protection products, cart management, and booking.
+   - Admin & Staff Portal (`/admin`): Desktop/tablet-optimized, counter sales and billing, inventory audit, goods receipt, delivery management, and reports.
+2. **Database-Centric Business Logic (PL/pgSQL Functions)**: All critical business transactions—such as stock reservations, booking transitions, purchase receipts, inventory adjustments, counter sales billing, and payment processing—execute exclusively inside PostgreSQL stored functions. The frontend browser **never** writes directly to inventory or financial tables.
 3. **Concurrency Safety & ACID Guarantees**: Stock deduction and booking reservation utilize explicit row locking (`SELECT ... FOR UPDATE`), transaction isolation, and database-level idempotency checks.
 4. **Minimal Edge Functions**: Supabase Edge Functions (TypeScript/Deno) are utilized solely when server-side secrets or third-party webhooks are involved (e.g. CAPTCHA verification, future SMS gateway integration). Public and authenticated database interactions occur via PostgREST and RPC calls governed by strict Row Level Security (RLS).
 5. **Strict Environment Isolation**: Independent development and production Supabase projects to safeguard financial and inventory integrity.
@@ -25,7 +25,7 @@
 |   |         Customer Interface            |   |           Admin & Staff Portal        | |
 |   |      (Mobile PWA, English/Telugu)     |   |         (/admin Layout & Views)       | |
 |   |                                       |   |                                       | |
-|   |   - Catalog & Search                  |   |   - POS Counter Billing               | |
+|   |   - Pesticide Catalog & Search        |   |   - Counter Sales & Billing           | |
 |   |   - Cart & Checkout                   |   |   - Goods Receipt & Purchases         | |
 |   |   - 24h Booking Creation              |   |   - Inventory Adjustments             | |
 |   |   - WhatsApp Integration (wa.me)      |   |   - Udhaar Credit Ledger              | |
@@ -81,7 +81,8 @@
 |   |   |   +-----------------------------v-----------------------------------+   |   |   |
 |   |   |   |                     Data Persistence Layer                      |   |   |   |
 |   |   |   |                                                                 |   |   |   |
-|   |   |   |   - products & product_stock (physical, reserved, WAC cost)     |   |   |   |
+|   |   |   |   - products (CIB&RC, active ingredient, formulation, toxicity) |   |   |   |
+|   |   |   |   - product_stock (physical, reserved, WAC cost)                |   |   |   |
 |   |   |   |   - inventory_movements (Immutable append-only ledger)          |   |   |   |
 |   |   |   |   - bookings & booking_items (24h reservations)                 |   |   |   |
 |   |   |   |   - sales & sale_items & sale_payments                          |   |   |   |
@@ -198,16 +199,16 @@ src/
 │   └── admin/                              # Internal store management domain
 │       ├── dashboard/                      # KPI summary, quick actions, low stock alerts
 │       ├── products/                       # Product CRUD, pack size setup, MRP config
-│       ├── categories/                     # Category & crop tag management
+│       ├── categories/                     # Category & target pest tag management
 │       ├── inventory/                      # Stock view, manual adjustments, audit history
 │       ├── suppliers/                      # Supplier master directory (Admin only)
 │       ├── purchases/                      # Goods receipt, batch/expiry logging, WAC
 │       ├── bookings/                       # Booking review, fulfillment, status changes
-│       ├── sales/                          # POS counter checkout, thermal receipt print
+│       ├── sales/                          # Counter billing & checkout, thermal receipt print
 │       ├── deliveries/                     # Local delivery assignment & tracking
 │       ├── customers/                      # Customer list, credit limits, udhaar history
 │       ├── reports/                        # Daily sales, profit margin, inventory value
-│       └── settings/                       # Shop details, license numbers, UPI QR config
+│       └── settings/                       # Shop details, pesticide license details, UPI QR config
 ├── lib/                                    # Core infrastructure libraries
 │   ├── supabase.ts                         # Supabase client initialization
 │   ├── api.ts                              # PostgREST and RPC client abstractions
@@ -235,5 +236,5 @@ src/
 ## 5. Development vs. Production Isolation
 
 To guarantee financial and inventory data integrity:
-- **Development Environment**: Isolated Supabase project for automated migrations, test seed data, and feature development.
+- **Development Environment**: Isolated Supabase project for automated migrations, test fixtures, and feature development.
 - **Production Environment**: High-reliability Supabase Pro project hosted in the Mumbai/India AWS region (`ap-south-1`) for lowest latency, equipped with automated daily backups and Point-In-Time Recovery (PITR).
