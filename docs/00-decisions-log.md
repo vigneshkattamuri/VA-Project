@@ -6,8 +6,8 @@ This document records the foundational product and architectural decisions for *
 
 | ID | Decision | Choice | Status | Date |
 | :--- | :--- | :--- | :--- | :--- |
-| **D01** | Costing method | Weighted Average Cost (WAC) recalculated upon every goods receipt | Confirmed | 2026-10-11 |
-| **D02** | Batch and expiry tracking | Batch number and expiry recorded on goods receipt; inventory balance deducted at product level; revisit batch-level stock in Phase 4 | Provisional | 2026-10-11 |
+| **D01** | Costing method | Weighted Average Cost (WAC) recalculated upon every goods receipt; storage location (inventory balance vs product) decided in Phase 4 | Confirmed | 2026-10-11 |
+| **D02** | Batch and expiry tracking | Batch number, mfg date and expiry date recorded per goods receipt line; decide in Phase 4 whether stock is tracked per batch (FEFO) or per product | Provisional | 2026-10-11 |
 | **D03** | Product variant modeling | Each sellable pack size is modeled as its own independent product row in `products` | Confirmed | 2026-10-11 |
 | **D04** | Pricing & tax calculation | Prices stored tax-inclusive with per-product tax rate; actual GST rates and invoice rules TO BE VERIFIED WITH ACCOUNTANT | TO BE VERIFIED WITH ACCOUNTANT | 2026-10-11 |
 | **D05** | Customer authentication | Email/password first; guest bookings rate-limited with CAPTCHA; phone OTP deferred to later phase | Confirmed | 2026-10-11 |
@@ -25,7 +25,7 @@ This document records the foundational product and architectural decisions for *
 | **D17** | Production infrastructure tier | Supabase Pro tier (providing daily automated backups and point-in-time recovery) required prior to production launch | Confirmed | 2026-10-11 |
 | **D18** | Business and product scope | Scope = pesticides, plant growth regulators, micronutrients. Bulk fertilizers, seeds, subsidized inputs excluded | Confirmed | 2026-10-11 |
 | **D19** | Initial product categories | Initial categories (configurable in the database): Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides, Plant Growth Regulators, Micronutrients | Confirmed | 2026-10-11 |
-| **D20** | Product regulatory & technical data fields | Product records support: registration/licence number (CIB&RC or other applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable), batch number, manufacturing date, expiry date. Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH | Provisional | 2026-10-11 |
+| **D20** | Product regulatory & technical data fields | Product records support: registration/licence number (CIB&RC or other applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable). Batch number, manufacturing date and expiry date recorded per goods receipt line (batch record). Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH | Provisional | 2026-10-11 |
 | **D21** | Customer data access restriction | Customer-facing data limited to product name, price, images, product details, availability status, booking option, payment options, and own booking history. No stock counts, costs, or other customers' data | Confirmed | 2026-10-11 |
 | **D22** | Admin analytics & operational reporting | Admin-only analytics: customer purchase history (name, mobile, items, bill), best sellers, remaining stock, low stock, expiry, sales/purchase/profit reports, CSV export | Confirmed | 2026-10-11 |
 | **D23** | Initial release payment options | Customer sees accepted payment options (pay at shop, cash on delivery); admin records payment method and status. Online gateway deferred | Confirmed | 2026-10-11 |
@@ -36,12 +36,12 @@ This document records the foundational product and architectural decisions for *
 
 ### D01: Costing Method
 - **Rationale**: Agrochemical retail items experience seasonal purchase price fluctuations. Strict FIFO/LIFO batch allocation at the counter requires scanning every single bottle/packet's batch during rapid counter sales, which slows down counter operations during peak pest outbreaks. Weighted Average Costing (WAC) provides accurate financial accounting and gross profit calculations while keeping counter billing fast.
-- **Implementation**: On each purchase receipt, WAC is recomputed in the `receive_purchase` PostgreSQL function and persisted on the product record.
+- **Implementation**: On each purchase receipt, WAC is recomputed in the `receive_purchase` PostgreSQL function; storage location of the average cost (inventory balance vs product) is decided in Phase 4; it must be stored in one authoritative place.
 
 ### D02: Batch & Expiry Tracking
 - **Rationale**: Regulatory inspection compliance under the Insecticides Act, 1968 in Andhra Pradesh requires knowing which batches entered the shop and their manufacturer expiry dates. However, requiring counter staff to pick a specific batch during rapid retail sales of 50 farmers standing in line causes severe counter bottlenecks.
-- **Implementation**: Batch number and expiry date are recorded when receiving goods from suppliers (`purchase_items`). Physical stock balances and deductions occur at the product level (`product_stock`). Batch-level audit history remains available from purchase records.
-- **Status**: Provisional. Revisit batch-level stock in Phase 4.
+- **Implementation**: Batch number, manufacturing date, and expiry date are recorded per goods-receipt line (batch record) when receiving goods from suppliers (`purchase_items`), not on the product. Inventory balance deductions occur at the product level during the initial release. Batch-level audit history remains available from purchase goods-receipt records.
+- **Status**: Provisional. Revisit batch-level stock in Phase 4. Decide in Phase 4 whether stock is tracked per batch (FEFO) or per product.
 
 ### D03: Each Pack Size as an Independent Product Row
 - **Rationale**: In agro-chemicals, a 100ml bottle, 250ml bottle, 500ml bottle, and 1L bottle of the same chemical formulation have different MRPs, different purchase costs, different supplier barcodes/HSN codes, and separate inventory counts. Grouping them as complex relational variants introduces schema complexity and makes stock lookups error-prone.
@@ -50,7 +50,7 @@ This document records the foundational product and architectural decisions for *
 ### D04: Pricing, Taxes & GST Rates
 - **Rationale**: Retail customers in India expect prices displayed to be the final payable amount (MRP or discounted retail price inclusive of GST).
 - **Status**: TO BE VERIFIED WITH ACCOUNTANT.
-- **Pending Items**: Verification of specific HSN codes, applicable GST slabs (typically 18% on technical and formulated pesticides, 12%/18% on plant growth regulators and micronutrients under Andhra Pradesh GST rules), tax invoice formats, and B2C vs B2B threshold requirements under Andhra Pradesh GST rules.
+- **Pending Items**: Verification of specific HSN codes, applicable GST slabs on pesticides, plant growth regulators, and micronutrients under Andhra Pradesh GST rules, tax invoice formats, and B2C vs B2B threshold requirements.
 
 ### D05: Customer Authentication Strategy
 - **Rationale**: Indian SMS gateways require DLT (Distributed Ledger Technology) registration, sender ID whitelisting, and per-SMS fees which add friction during the initial project bootstrap.
@@ -120,16 +120,18 @@ This document records the foundational product and architectural decisions for *
 - **Status**: Confirmed.
 
 ### D20: Product Regulatory & Technical Data Fields
-- **Rationale**: Agrochemical products must be clearly identified by approved registration credentials, manufacturer details, technical formulations, toxicity hazard ratings, and batch lifecycles.
-- **Specification**: Product records support:
-  - Registration / Licence number (CIB&RC registration number or other applicable state registration)
-  - Manufacturer name
-  - Technical name / active ingredient / chemical composition (e.g. *Imidacloprid 17.8% SL*, *Gibberellic Acid 0.001% L*, *Chelated Zinc 12%*)
-  - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP, Liquid)
-  - Toxicity colour class (where applicable: Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
-  - Batch number
-  - Manufacturing date
-  - Expiry date
+- **Rationale**: Agrochemical products must be clearly identified by approved registration credentials, manufacturer details, technical formulations, and toxicity hazard ratings. Batch number, manufacturing date, and expiry date belong to stock receipts, not products.
+- **Specification**:
+  - **Product Record Fields**:
+    - Registration / Licence number (CIB&RC registration number or other applicable state registration)
+    - Manufacturer name
+    - Technical name / active ingredient / chemical composition (e.g. *Imidacloprid 17.8% SL*, *Gibberellic Acid 0.001% L*, *Chelated Zinc 12%*)
+    - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP, Liquid)
+    - Toxicity colour class (where applicable: Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
+  - **Goods Receipt Line Fields (Batch Record)**:
+    - Batch number
+    - Manufacturing date
+    - Expiry date
 - **Status**: Provisional. Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.
 
 ### D21: Customer Data Access Restriction

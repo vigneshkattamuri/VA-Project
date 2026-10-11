@@ -39,8 +39,9 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ### Phase 4: Database Schema & Supabase Migrations
 - **Goal**: Author reproducible SQL migrations defining tables, relations, constraints, and audit columns for retail agrochemicals (pesticides, PGRs, micronutrients).
 - **Acceptance Criteria**:
-  - [ ] Migrations for `products` supporting statutory fields per D20: registration/licence number (CIB&RC or applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable), batch number, manufacturing date, and expiry date.
-  - [ ] Revisit batch-level stock model per Decision D02 (Provisional).
+  - [ ] Migrations for `products` supporting statutory fields per D20: registration/licence number (CIB&RC or applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable).
+  - [ ] Migrations for goods receipt lines (`purchase_items`) capturing batch number, manufacturing date, and expiry date per batch record.
+  - [ ] Revisit batch-level stock model per Decision D02 (Provisional): decide in Phase 4 whether stock is tracked per batch (FEFO) or per product.
   - [ ] Tables for `product_stock`, `inventory_movements`, `suppliers`, `purchases` (with draft status), `sales`, `bookings`, `customer_credit_ledger`, and `shop_settings`.
   - [ ] Constraints enforced (`selling_price <= mrp`, `physical_stock >= 0`, `reserved_stock >= 0`).
   - [ ] Append-only movement types defined, with mandatory reason note requirement for stock adjustments.
@@ -73,7 +74,7 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ### Phase 7: Admin Product & Category Management
 - **Goal**: Build management interfaces for creating, editing, and categorizing sellable agrochemical products and pack sizes.
 - **Acceptance Criteria**:
-  - [ ] Admin forms to create and edit products with independent pack sizes and statutory fields per D20 (registration/licence no., manufacturer, composition, formulation, toxicity colour class, batch no., mfg date, expiry date).
+  - [ ] Admin forms to create and edit products with independent pack sizes and statutory fields per D20 (registration/licence no., manufacturer, composition, formulation, toxicity colour class). (Batch number, manufacturing date, and expiry date are excluded from product forms and recorded upon goods receipt.)
   - [ ] Product-level flags: `allow_online_booking`, `allow_home_delivery` (defaults to `false` for every product per D15), `requires_manual_review`.
   - [ ] MRP and selling price validation rules (`selling_price <= mrp`).
   - [ ] Category and target pest/application tag management screens.
@@ -103,7 +104,7 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 - **Goal**: Implement stock upload workflow: draft purchase orders, goods receipt with batch/expiry logging, adjustments with reason, and automated WAC recalculation.
 - **Acceptance Criteria**:
   - [ ] Draft purchase order management: create, review, update, or discard draft purchase bills without affecting live inventory.
-  - [ ] Goods receipt screen against draft purchases: mandatory capture of batch number, manufacturing date, and expiry date per line item (per D20).
+  - [ ] Goods receipt screen against draft purchases: mandatory capture of batch number, manufacturing date, and expiry date per line item (batch record per D20).
   - [ ] Backend execution of atomic `receive_purchase` function updating physical stock, appending audit ledger movements, and recalculating Weighted Average Cost.
   - [ ] Purchase history and invoice archives (Admin only).
 

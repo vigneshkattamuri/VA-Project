@@ -20,9 +20,7 @@ The system serves two primary stakeholder groups:
   - Technical name / active ingredient / composition (e.g. *Imidacloprid 17.8% SL*, *Gibberellic Acid 0.001% L*, *Chelated Zinc 12%*)
   - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP, Liquid)
   - Toxicity colour class (where applicable: Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
-  - Batch number
-  - Manufacturing date
-  - Expiry date
+  *(Note: Batch number, manufacturing date, and expiry date belong to stock receipts, not product records; see FR-PUR-02.)*
   *Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.*
 - **FR-CAT-04 Safety, Antidote & Label Information**: Safety and label instructions (including antidotes, precautions, pre-harvest intervals / waiting periods, target pests, and dosage recommendations) must be entered directly by the shop staff and displayed strictly as entered. The application must **never generate automated claims or AI assertions** regarding product effectiveness, chemical safety, or crop suitability.
 - **FR-CAT-05 Customer-Facing Data Restrictions**: Per Decision D21, customer-facing interfaces are strictly limited to displaying:
@@ -92,7 +90,7 @@ The system serves two primary stakeholder groups:
 
 ### 2.6 Purchases & Goods Receipt
 - **FR-PUR-01 Goods Receipt Recording**: Admins record received consignments against supplier invoices (`receive_purchase` function).
-- **FR-PUR-02 Batch & Expiry Capture**: Every received line item must capture manufacturer batch number and expiry date for statutory compliance under the Insecticides Rules.
+- **FR-PUR-02 Batch & Expiry Capture (Stock Receipts)**: Every received line item on a goods receipt (batch record) must capture manufacturer batch number, manufacturing date, and expiry date for statutory traceability. Batch data belongs to stock receipts, not products.
 - **FR-PUR-03 Automatic WAC Calculation**: Ingestion of received items automatically recomputes the product's Weighted Average Cost (WAC) based on existing physical quantity and new purchase cost.
 - **FR-PUR-04 Purchase Costs Confidentiality**: Purchase cost price per unit and supplier invoice amounts must never be exposed to `employee` or `delivery` roles.
 
@@ -157,7 +155,7 @@ The system serves two primary stakeholder groups:
 ### 3.2 Performance & Responsiveness
 - **NFR-PRF-01 Low Bandwidth Optimization**: First Contentful Paint (FCP) under 1.8 seconds and Time to Interactive (TTI) under 3.0 seconds on simulated 3G mobile networks.
 - **NFR-PRF-02 Asset Optimization**: Total initial JavaScript bundle size kept under 250 KB (compressed); responsive image delivery for product photography.
-- **NFR-PRF-03 Database Latency**: PostgREST / RPC function execution time under 150ms for 95th percentile requests.
+- **NFR-PRF-03 Database Latency (Target to be measured in Phase 18)**: PostgREST / RPC function execution time under 150ms for 95th percentile requests (target to be measured in Phase 18, not a rigid initial requirement).
 
 ### 3.3 Security & Authorization
 - **NFR-SEC-01 Row Level Security (RLS)**: Mandatory RLS enabled on 100% of public schema tables with default deny policy.
@@ -167,6 +165,6 @@ The system serves two primary stakeholder groups:
 
 ### 3.4 Regulatory & Compliance Hooks
 - **NFR-REG-01 Statutory Records**: Data schema must accommodate mandatory retail register and inspection requirements under the Insecticides Act, 1968 and Insecticides Rules, 1971. TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.
-- **NFR-REG-02 Tax Compliance**: Invoicing data structure must comply with Andhra Pradesh GST retail invoice guidelines for crop-protection and crop-nutrition chemicals (typically 18% GST). TO BE VERIFIED WITH ACCOUNTANT.
+- **NFR-REG-02 Tax Compliance**: Invoicing data structure must comply with Andhra Pradesh GST retail invoice guidelines for crop-protection and crop-nutrition chemicals. TO BE VERIFIED WITH ACCOUNTANT.
 - **NFR-REG-03 Legal Metrology**: Selling price enforcement ensuring strict compliance with Legal Metrology (Packaged Commodities) Rules, barring sales above printed MRP.
 - **NFR-REG-04 Data Privacy Compliance**: Storage of farmer customer names and mobile numbers governed by Digital Personal Data Protection Act, 2023 principles (purpose specification and privacy notice at collection).

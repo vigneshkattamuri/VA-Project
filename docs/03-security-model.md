@@ -48,14 +48,17 @@ To protect commercial store confidentiality and individual farmer privacy:
 
 ---
 
-## 4. Role Assignment Security
+## 4. Role Assignment Security & First Admin Bootstrap
 
 - **Self-Assignment Prohibition**: Users can **never** assign or modify roles for themselves.
+- **First Admin Bootstrap**:
+  - Public sign-up always creates the `customer` role (enforced via a secure database trigger on `auth.users`).
+  - The first `admin` role is assigned manually by the owner in the Supabase dashboard / SQL, never through the application.
+  - No client call can create or change roles.
 - **Implementation**:
   - Roles are stored in a dedicated `user_roles` table (`user_id`, `role`, `created_at`, `assigned_by`) outside the editable `profiles` table.
   - The `user_roles` table is protected by PostgreSQL RLS with `INSERT`, `UPDATE`, and `DELETE` policies restricted strictly to authenticated users with the `admin` role.
-  - User registration via Supabase Auth defaults automatically to the `customer` role via a database trigger.
-  - Elevated roles (`employee`, `delivery`, `admin`) can only be provisioned through an explicit admin action or initial setup script during deployment.
+  - Elevated roles (`employee`, `delivery`) can only be provisioned through explicit admin actions in the backend, while the root admin is bootstrapped manually in Supabase SQL.
 
 ---
 
@@ -64,7 +67,7 @@ To protect commercial store confidentiality and individual farmer privacy:
 1. **Default Deny Strategy**: Every single table created in the `public` schema has Row Level Security explicitly enabled (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`). No query returns data unless an explicit policy permits it.
 2. **Read-Only Inventory Exposure**:
    - The public/customer tier only reads sanitized availability indicators through an API view.
-   - Direct `INSERT`, `UPDATE`, or `DELETE` on `inventory_movements`, `product_stock`, `sales`, and `bookings` is completely denied to all client roles. All mutations must occur via validated PostgreSQL stored functions.
+   - Direct `INSERT`, `UPDATE`, or `DELETE` on `inventory_movements`, `inventory_balances`, `sales`, and `bookings` is completely denied to all client roles. All mutations must occur via validated PostgreSQL stored functions.
 3. **Data Isolation by Tenant / Customer**:
    - Customers can only query bookings, orders, and ledger entries matching their authenticated UID (`auth.uid() = user_id`).
    - Guest bookings are secured via non-guessable UUIDs and tokenized booking references.

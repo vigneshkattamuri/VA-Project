@@ -122,12 +122,12 @@ The browser client is strictly restricted from performing direct SQL `INSERT`, `
 - **Execution**: Locks booking row, releases `reserved_stock`, inserts `reservation_release` movement, and marks booking as `cancelled`.
 
 ### 3.4 `receive_purchase` (Stock Upload Workflow)
-- **Parameters**: `p_supplier_id`, `p_invoice_number`, `p_invoice_date`, `p_items` (JSON array of `product_id`, `quantity`, `cost_price_per_unit`, `batch_number`, `expiry_date`), `p_idempotency_key`.
+- **Parameters**: `p_supplier_id`, `p_invoice_number`, `p_invoice_date`, `p_items` (JSON array of `product_id`, `quantity`, `cost_price_per_unit`, `batch_number`, `mfg_date`, `expiry_date`), `p_idempotency_key`.
 - **Execution**:
   - Ingests draft purchase orders or incoming goods receipts.
   - Locks product stock rows `FOR UPDATE`.
   - Recalculates New Weighted Average Cost (WAC) for each product.
-  - Increments `physical_stock` and records batch number and expiry date in `purchase_items`.
+  - Increments physical stock and records batch number, manufacturing date, and expiry date per goods-receipt line (`purchase_items` batch record). Batch data belongs strictly to stock receipts, not products.
   - Inserts `purchase_receipt` movement into `inventory_movements`.
 
 ### 3.5 `adjust_stock` (Stock Adjustment with Mandatory Reason)

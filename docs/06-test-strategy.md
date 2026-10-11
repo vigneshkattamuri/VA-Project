@@ -29,7 +29,7 @@
   - Tax-inclusive price separation into base taxable value and GST breakdown.
   - Indian currency formatters (`₹1,25,000.00`) and Telugu/English date formatters.
   - Cart calculation logic (quantities, item subtotals).
-  - Validation rules for D20 product fields (batch number format, mfg date <= expiry date).
+  - Validation rules for goods receipt batch records (batch number format, mfg date <= expiry date).
 
 ### 2.2 Integration Tests (React Testing Library & Supabase pgTAP)
 - **Frontend Component Integration**:
