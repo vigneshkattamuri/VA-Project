@@ -1,42 +1,51 @@
 # System Requirements Specification: Vighnesh AgroCare
 
 ## 1. Project Overview
-**Vighnesh AgroCare** is a production Progressive Web App (PWA) tailored for an Indian retail pesticide shop (crop protection agrochemicals) operating in **Andhra Pradesh, India** (see Decision D18).
+**Vighnesh AgroCare** is a production Progressive Web App (PWA) tailored for an Indian agrochemical retail shop operating in **Andhra Pradesh, India**. The shop specializes in crop-protection and crop-nutrition products: pesticides, plant growth regulators (PGRs), and micronutrients (see Decision D18).
 
 The system serves two primary stakeholder groups:
-1. **Farmers & Agricultural Customers**: Fast, lightweight bilingual (English & Telugu) interface for browsing crop protection agrochemicals (insecticides, fungicides, herbicides, etc.), verifying retail prices (MRP and selling price) and availability, and booking products for shop pickup or local delivery.
-2. **Shop Owner & Store Staff**: A robust administrative management dashboard for real-time inventory tracking, counter billing and sales, purchase goods receipt with batch and expiry tracking, supplier management, customer credit ledger (udhaar), local delivery coordination, and business reporting.
+1. **Farmers & Agricultural Customers**: Fast, lightweight bilingual (English & Telugu) interface for browsing crop-protection and crop-nutrition agrochemicals (insecticides, fungicides, herbicides, PGRs, micronutrients), verifying retail prices (MRP and selling price) and availability, and booking products for shop pickup or local delivery with accepted payment options.
+2. **Shop Owner & Store Staff**: A robust administrative management dashboard for real-time inventory tracking, stock upload workflows (draft purchases, goods receipt, adjustments), counter sales billing with customer name and mobile, customer credit ledger (udhaar), local delivery coordination, customer purchase analytics, and operational reporting.
 
 ---
 
 ## 2. Functional Requirements by Module
 
 ### 2.1 Product Catalog
-- **FR-CAT-01 Product Hierarchy & Categories**: Products must be categorized into crop protection segments: Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, and Bio-pesticides (configurable via a `categories` table in the database per Decision D19).
+- **FR-CAT-01 Product Hierarchy & Categories**: Products must be categorized into crop-protection and crop-nutrition segments: Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides, Plant Growth Regulators, and Micronutrients (configurable via a `categories` table in the database per Decision D19).
 - **FR-CAT-02 Independent Pack Sizes**: Each distinct pack size (e.g. 50ml, 100ml, 250ml, 500ml, 1L, 5L, 100g, 250g, 500g, 1kg) must be modeled as a distinct sellable product record with its own SKU, MRP, selling price, and stock level. Example: *Imidacloprid 17.8% SL 100 ml* and *Imidacloprid 17.8% SL 250 ml* are separate product records.
 - **FR-CAT-03 Regulatory & Statutory Product Fields**: Product records must support the following statutory and technical fields (Decision D20):
-  - CIB&RC registration number (Central Insecticides Board & Registration Committee)
+  - Registration / Licence number (CIB&RC registration number or other applicable state registration)
   - Manufacturer name
-  - Technical name (active ingredient, e.g. *Imidacloprid 17.8% SL*, *Chlorpyrifos 20% EC*)
-  - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP)
-  - Toxicity colour class (Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
+  - Technical name / active ingredient / composition (e.g. *Imidacloprid 17.8% SL*, *Gibberellic Acid 0.001% L*, *Chelated Zinc 12%*)
+  - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP, Liquid)
+  - Toxicity colour class (where applicable: Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
   - Batch number
   - Manufacturing date
   - Expiry date
   *Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.*
 - **FR-CAT-04 Safety, Antidote & Label Information**: Safety and label instructions (including antidotes, precautions, pre-harvest intervals / waiting periods, target pests, and dosage recommendations) must be entered directly by the shop staff and displayed strictly as entered. The application must **never generate automated claims or AI assertions** regarding product effectiveness, chemical safety, or crop suitability.
-- **FR-CAT-05 Bilingual Information**: Product cards and detail views must display English trade names, technical chemical active ingredients, and localized Telugu names and usage instructions entered by the shop.
-- **FR-CAT-06 Pricing Visibility**: Display Maximum Retail Price (MRP), actual selling price (tax-inclusive), and savings/discount amount clearly. Selling price cannot exceed MRP.
-- **FR-CAT-07 Stock Availability Badges**: Display stock availability indicators (`In Stock`, `Low Stock`, `Out of Stock`) computed strictly from `available_stock` (`physical_stock - reserved_stock`).
+- **FR-CAT-05 Customer-Facing Data Restrictions**: Per Decision D21, customer-facing interfaces are strictly limited to displaying:
+  - Product brand name and trade name
+  - Selling price (tax-inclusive) and printed MRP
+  - Product images
+  - Product details (active composition, formulation, shop-entered dosage/safety info)
+  - Stock availability status indicator (`In Stock`, `Low Stock`, `Out of Stock`)
+  - Booking options and accepted payment options
+  - Customer's own booking history
+  *Exact numeric stock counts, wholesale purchase costs, supplier records, and other customers' purchase data must NEVER be exposed to customer-facing views.*
+- **FR-CAT-06 Bilingual Information**: Product cards and detail views must display English trade names, technical chemical active ingredients/compositions, and localized Telugu names and usage instructions entered by the shop.
+- **FR-CAT-07 Pricing Visibility**: Display Maximum Retail Price (MRP), actual selling price (tax-inclusive), and savings/discount amount clearly. Selling price cannot exceed MRP.
 - **FR-CAT-08 Operational Restriction Badges**: Products marked with `allow_online_booking = false` must display as "In-Store Only". Products with `requires_manual_review = true` must inform customers that booking requires staff review and confirmation before pickup.
 - **FR-CAT-09 Search & Filtering**: Fast full-text search across brand name, technical active ingredient, target crop, target pest/weed, toxicity class, and category.
 
-### 2.2 Shopping Cart
+### 2.2 Shopping Cart & Booking Privacy
 - **FR-CRT-01 Client-Side Cart**: Cart must persist across browser refreshes via localStorage while maintaining user isolation upon login/logout.
 - **FR-CRT-02 Real-Time Stock Validation**: Cart items must be dynamically checked against currently available stock (`available_stock`). Users cannot add or increment items beyond available stock.
 - **FR-CRT-03 Pack Size Selection**: Customers must be able to switch between available pack sizes directly from the product view or cart.
 - **FR-CRT-04 Delivery Method Choice**: At cart checkout, customer selects between **Store Pickup** and **Home/Village Delivery**. Note: `allow_home_delivery` defaults to `false` for every product due to transport safety restrictions on agrochemicals; delivery is only selectable if all cart items allow delivery.
 - **FR-CRT-05 Subtotal Calculation**: Dynamic computation of item totals, tax-inclusive subtotal, and estimated delivery fee (if applicable).
+- **FR-CRT-06 Statutory Privacy Notice at Booking**: When a customer enters their Name, Mobile Number, and Village/Address during booking (guest or registered), the checkout screen must display a prominent, clear **Privacy Notice** explaining the purpose of data collection (order fulfillment, billing compliance, and contact), in accordance with the Digital Personal Data Protection Act, 2023.
 
 ### 2.3 Booking & Concurrency-Safe Reservations
 - **FR-BKG-01 Booking Creation**: The customer submits a booking containing one or more products. The backend executes a database transaction (`create_booking`) that locks stock using `SELECT ... FOR UPDATE` and records a reservation.
@@ -50,9 +59,10 @@ The system serves two primary stakeholder groups:
   - `out_for_delivery`: Assigned to delivery agent.
   - `completed`: Goods handed over and payment received/settled.
   - `cancelled`: Cancelled by user, rejected by admin, or auto-expired after 24h.
-- **FR-BKG-06 WhatsApp Handoff**: Upon booking confirmation, provide a single-tap WhatsApp link (`wa.me`) pre-populated with order number, product items, and pickup/delivery details.
+- **FR-BKG-06 Accepted Payment Options Display**: Per Decision D23, the booking flow clearly displays accepted payment methods to the customer: "Pay at Shop" for pickup or "Cash on Delivery" for local delivery. Online payment gateways are deferred.
+- **FR-BKG-07 WhatsApp Handoff**: Upon booking confirmation, provide a single-tap WhatsApp link (`wa.me`) pre-populated with order number, product items, and pickup/delivery details.
 
-### 2.4 Inventory Management
+### 2.4 Inventory Management & Stock Upload Workflows
 - **FR-INV-01 Tri-Partite Stock Accounting**:
   - `physical_stock`: Total actual inventory physically present inside the retail shop.
   - `reserved_stock`: Inventory committed to active, unexpired customer bookings.
@@ -69,13 +79,16 @@ The system serves two primary stakeholder groups:
   - `expiry` (- physical)
   - `customer_return` (+ physical)
   - `supplier_return` (- physical)
-- **FR-INV-04 Low Stock Alerts**: Configurable low-stock threshold per product with automated visual indicators on the admin dashboard.
-- **FR-INV-05 Audit & Stock Adjustments**: Stock reconciliation screen allowing authorized admins to record physical audit variances (`adjustment_in`, `adjustment_out`, `damage`, `expiry`) with mandatory audit notes.
+- **FR-INV-04 Stock Upload & Ingestion Workflow**:
+  1. **Draft Purchase**: Admin can prepare and save a draft purchase order with expected supplier items, quantities, and agreed unit costs.
+  2. **Goods Receipt Ingestion**: When consignment arrives at the shop, admin confirms actual received quantities and records mandatory batch numbers and expiry dates per line item, triggering automated Weighted Average Cost (WAC) recalculation and physical stock increment.
+  3. **Stock Adjustments with Mandatory Audit Reason**: Manual stock reconciliations (`adjust_stock`) require an explicit reason category (`adjustment_in`, `adjustment_out`, `damage`, `expiry`) and mandatory explanatory notes.
+- **FR-INV-05 Low Stock & Expiry Alerts**: Configurable low-stock thresholds and chemical expiry tracking with automated visual alerts on the admin dashboard.
 
 ### 2.5 Supplier Management
-- **FR-SUP-01 Supplier Directory**: CRUD management of licensed agrochemical and pesticide manufacturers and authorized distributors.
+- **FR-SUP-01 Supplier Directory**: CRUD management of licensed agrochemical manufacturers and authorized distributors.
 - **FR-SUP-02 Supplier Metadata**: Company legal name, trade name, GSTIN, registered address, primary contact person, phone number, email, and credit terms (days).
-- **FR-SUP-03 Confidentiality Protection**: Supplier details and contact information must be strictly visible only to users with the `admin` role.
+- **FR-SUP-03 Confidentiality Protection**: Supplier details, trade agreements, and contact information must be strictly visible only to users with the `admin` role.
 
 ### 2.6 Purchases & Goods Receipt
 - **FR-PUR-01 Goods Receipt Recording**: Admins record received consignments against supplier invoices (`receive_purchase` function).
@@ -83,12 +96,13 @@ The system serves two primary stakeholder groups:
 - **FR-PUR-03 Automatic WAC Calculation**: Ingestion of received items automatically recomputes the product's Weighted Average Cost (WAC) based on existing physical quantity and new purchase cost.
 - **FR-PUR-04 Purchase Costs Confidentiality**: Purchase cost price per unit and supplier invoice amounts must never be exposed to `employee` or `delivery` roles.
 
-### 2.7 Sales & Counter Billing
+### 2.7 Counter Sales Billing & Receipts
 - **FR-SAL-01 Counter Sales**: Fast counter billing screen allowing staff to scan/search items, select pack sizes, and complete immediate sales.
-- **FR-SAL-02 Booking Fulfillment**: Fulfill online bookings at the counter by looking up booking ID or customer phone number, converting reservation into a finalized sale.
-- **FR-SAL-03 MRP Enforcement**: Unit sale price is strictly validated to ensure `sale_price <= mrp`. Any attempt to bill higher than MRP is rejected at the database level.
-- **FR-SAL-04 Tax-Inclusive Computation**: Line items compute base taxable amount and GST breakdown from the tax-inclusive retail price.
-- **FR-SAL-05 Printable Thermal Receipts**: Formatted 3-inch (80mm) thermal receipt output and digital shareable receipt format. Actual statutory format TO BE VERIFIED WITH ACCOUNTANT.
+- **FR-SAL-02 Customer Identification on Bill**: Counter sales billing must capture Customer Name and Mobile Number (mandatory for statutory sale registers under Rule 15 of Insecticides Rules, 1971).
+- **FR-SAL-03 Booking Fulfillment**: Fulfill online bookings at the counter by looking up booking ID or customer phone number, converting reservation into a finalized sale.
+- **FR-SAL-04 MRP Enforcement**: Unit sale price is strictly validated to ensure `sale_price <= mrp`. Any attempt to bill higher than MRP is rejected at the database level.
+- **FR-SAL-05 Tax-Inclusive Computation**: Line items compute base taxable amount and GST breakdown from the tax-inclusive retail price.
+- **FR-SAL-06 Printable & Shareable Thermal Receipts**: Formatted 3-inch (80mm) thermal receipt output and digital shareable receipt format capturing shop details, customer name, mobile number, product name, batch number, expiry date, HSN, tax rate, and total amount.
 
 ### 2.8 Local Delivery Management
 - **FR-DEL-01 Order Assignment**: Admin assigns local delivery bookings to users with the `delivery` role.
@@ -106,12 +120,13 @@ The system serves two primary stakeholder groups:
 - **FR-CRD-03 Append-Only Credit Ledger**: All credit additions (sales on credit) and credit repayments (cash/UPI payments received from customer) recorded in `customer_credit_ledger`.
 - **FR-CRD-04 Customer Statement**: Printable and WhatsApp-shareable ledger statement showing transaction dates, invoice references, repayments, and running outstanding balance.
 
-### 2.11 Reports & Financial Analytics
-- **FR-REP-01 Daily Sales Summary**: Daily gross sales, payment mode breakdown (Cash, UPI, Credit), and sales volume by pesticide category.
-- **FR-REP-02 Inventory Valuation**: Total valuation of current physical inventory calculated using Weighted Average Cost (WAC). Restricted to `admin`.
-- **FR-REP-03 Profit & Margin Reports**: Gross profit report computed as `(Selling Price - Weighted Average Cost) * Quantity Sold`. Strictly restricted to `admin`.
-- **FR-REP-04 Outstanding Credit (Udhaar) Report**: Aging list of customer outstanding credit balances and collection tracking.
-- **FR-REP-05 Fast & Slow Moving Stock**: Analytical breakdown of inventory velocity to prevent chemical expiry losses.
+### 2.11 Reports & Admin Analytics
+- **FR-REP-01 Admin Customer-Purchase View**: Dedicated search and filter interface allowing store administrators to inspect customer purchase history by customer name, mobile number, purchased items, and total invoice amounts.
+- **FR-REP-02 Best-Selling Products Analytics**: Analytical report ranking top-selling agrochemical products by sales volume and total revenue across configurable date ranges.
+- **FR-REP-03 Remaining Stock & Valuation Report**: Complete stock overview showing remaining physical, reserved, and available quantities across all SKUs, with total valuation calculated using Weighted Average Cost (WAC). Restricted to `admin`.
+- **FR-REP-04 Chemical Expiry & Low Stock Reports**: Actionable reports tracking products nearing manufacturer expiry and items falling below safety reorder levels.
+- **FR-REP-05 Financial & Profit Reports**: Daily sales report with breakdown by payment mode (Cash, UPI, Credit), purchase summaries, and gross profit reports computed as `(Selling Price - WAC) * Quantity Sold`. Strictly restricted to `admin`.
+- **FR-REP-06 CSV Data Export**: Capability to export tabular datasets (sales history, customer purchases, stock balances, expiry reports) to standard CSV format for accounting and statutory record-keeping.
 
 ### 2.12 Authentication & Access Control
 - **FR-AUT-01 Customer Authentication**: Email and password registration and login via Supabase Auth.
@@ -135,7 +150,7 @@ The system serves two primary stakeholder groups:
 ## 3. Non-Functional Requirements
 
 ### 3.1 Concurrency & Data Consistency
-- **NFR-CON-01 Zero Overselling**: Concurrency control via PostgreSQL row-level locks (`SELECT ... FOR UPDATE`) inside stored functions to prevent race conditions during simultaneous bookings of scarce seasonal pesticide stock.
+- **NFR-CON-01 Zero Overselling**: Concurrency control via PostgreSQL row-level locks (`SELECT ... FOR UPDATE`) inside stored functions to prevent race conditions during simultaneous bookings of scarce seasonal agrochemical stock.
 - **NFR-CON-02 Zero Negative Stock**: Database constraints (`physical_stock >= 0`, `available_stock >= 0`) guarantee stock balances can never enter negative values under any circumstance.
 - **NFR-CON-03 Idempotent Transactions**: All stock alteration, booking creation, and payment operations must support idempotency keys to eliminate duplicate records caused by client retries or network drops.
 
@@ -152,5 +167,6 @@ The system serves two primary stakeholder groups:
 
 ### 3.4 Regulatory & Compliance Hooks
 - **NFR-REG-01 Statutory Records**: Data schema must accommodate mandatory retail register and inspection requirements under the Insecticides Act, 1968 and Insecticides Rules, 1971. TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.
-- **NFR-REG-02 Tax Compliance**: Invoicing data structure must comply with Andhra Pradesh GST retail invoice guidelines for crop protection chemicals (typically 18% GST). TO BE VERIFIED WITH ACCOUNTANT.
+- **NFR-REG-02 Tax Compliance**: Invoicing data structure must comply with Andhra Pradesh GST retail invoice guidelines for crop-protection and crop-nutrition chemicals (typically 18% GST). TO BE VERIFIED WITH ACCOUNTANT.
 - **NFR-REG-03 Legal Metrology**: Selling price enforcement ensuring strict compliance with Legal Metrology (Packaged Commodities) Rules, barring sales above printed MRP.
+- **NFR-REG-04 Data Privacy Compliance**: Storage of farmer customer names and mobile numbers governed by Digital Personal Data Protection Act, 2023 principles (purpose specification and privacy notice at collection).

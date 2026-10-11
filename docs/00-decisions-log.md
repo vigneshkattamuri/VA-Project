@@ -23,16 +23,19 @@ This document records the foundational product and architectural decisions for *
 | **D15** | Product restriction flags | Product-level flags: `allow_online_booking`, `allow_home_delivery` (defaults to false for every product), `requires_manual_review` | Confirmed | 2026-10-11 |
 | **D16** | Stock returns handling | Return movement types defined in schema now (`customer_return`, `supplier_return`); management screens built later | Confirmed | 2026-10-11 |
 | **D17** | Production infrastructure tier | Supabase Pro tier (providing daily automated backups and point-in-time recovery) required prior to production launch | Confirmed | 2026-10-11 |
-| **D18** | Business and product scope | Scope = pesticides only; fertilizers, seeds and subsidized inputs excluded | Confirmed | 2026-10-11 |
-| **D19** | Initial product categories | Initial categories (configurable in the database): Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides | Confirmed | 2026-10-11 |
-| **D20** | Pesticide regulatory & product data fields | Product records must support: CIB&RC registration number, manufacturer, technical name (active ingredient), formulation, toxicity colour class, batch number, manufacturing date, expiry date. Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH | Provisional | 2026-10-11 |
+| **D18** | Business and product scope | Scope = pesticides, plant growth regulators, micronutrients. Bulk fertilizers, seeds, subsidized inputs excluded | Confirmed | 2026-10-11 |
+| **D19** | Initial product categories | Initial categories (configurable in the database): Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides, Plant Growth Regulators, Micronutrients | Confirmed | 2026-10-11 |
+| **D20** | Product regulatory & technical data fields | Product records support: registration/licence number (CIB&RC or other applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable), batch number, manufacturing date, expiry date. Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH | Provisional | 2026-10-11 |
+| **D21** | Customer data access restriction | Customer-facing data limited to product name, price, images, product details, availability status, booking option, payment options, and own booking history. No stock counts, costs, or other customers' data | Confirmed | 2026-10-11 |
+| **D22** | Admin analytics & operational reporting | Admin-only analytics: customer purchase history (name, mobile, items, bill), best sellers, remaining stock, low stock, expiry, sales/purchase/profit reports, CSV export | Confirmed | 2026-10-11 |
+| **D23** | Initial release payment options | Customer sees accepted payment options (pay at shop, cash on delivery); admin records payment method and status. Online gateway deferred | Confirmed | 2026-10-11 |
 
 ---
 
 ## Detailed Decision Notes
 
 ### D01: Costing Method
-- **Rationale**: Pesticide retail items experience seasonal purchase price fluctuations. Strict FIFO/LIFO batch allocation at the counter requires scanning every single bottle/packet's batch during rapid counter sales, which slows down counter operations during peak pest outbreaks. Weighted Average Costing (WAC) provides accurate financial accounting and gross profit calculations while keeping counter billing fast.
+- **Rationale**: Agrochemical retail items experience seasonal purchase price fluctuations. Strict FIFO/LIFO batch allocation at the counter requires scanning every single bottle/packet's batch during rapid counter sales, which slows down counter operations during peak pest outbreaks. Weighted Average Costing (WAC) provides accurate financial accounting and gross profit calculations while keeping counter billing fast.
 - **Implementation**: On each purchase receipt, WAC is recomputed in the `receive_purchase` PostgreSQL function and persisted on the product record.
 
 ### D02: Batch & Expiry Tracking
@@ -47,7 +50,7 @@ This document records the foundational product and architectural decisions for *
 ### D04: Pricing, Taxes & GST Rates
 - **Rationale**: Retail customers in India expect prices displayed to be the final payable amount (MRP or discounted retail price inclusive of GST).
 - **Status**: TO BE VERIFIED WITH ACCOUNTANT.
-- **Pending Items**: Verification of specific pesticide HSN codes, applicable GST slabs (typically 18% on technical and formulated chemical pesticides under Andhra Pradesh GST rules), tax invoice formats, and B2C vs B2B threshold requirements under Andhra Pradesh GST rules.
+- **Pending Items**: Verification of specific HSN codes, applicable GST slabs (typically 18% on technical and formulated pesticides, 12%/18% on plant growth regulators and micronutrients under Andhra Pradesh GST rules), tax invoice formats, and B2C vs B2B threshold requirements under Andhra Pradesh GST rules.
 
 ### D05: Customer Authentication Strategy
 - **Rationale**: Indian SMS gateways require DLT (Distributed Ledger Technology) registration, sender ID whitelisting, and per-SMS fees which add friction during the initial project bootstrap.
@@ -63,7 +66,7 @@ This document records the foundational product and architectural decisions for *
 
 ### D08: Single Shop Operation with Settings Table
 - **Rationale**: The project serves a dedicated retail outlet in Andhra Pradesh. Multi-tenant architecture would add unnecessary complexity at this stage.
-- **Implementation**: A single `shop_settings` table stores shop name, address, contact numbers, pesticide retail dealership license numbers, GSTIN, UPI VPA, and working hours.
+- **Implementation**: A single `shop_settings` table stores shop name, address, contact numbers, pesticide and retail dealership license numbers, GSTIN, UPI VPA, and working hours.
 
 ### D09: Maximum Retail Price (MRP) Enforcement
 - **Rationale**: Under the Legal Metrology Act and Indian consumer laws, selling any packaged commodity above the printed Maximum Retail Price (MRP) is illegal and incurs statutory penalties.
@@ -86,7 +89,7 @@ This document records the foundational product and architectural decisions for *
 - **Implementation**: Internationalization (i18n) framework initialized in Phase 2 with a clean key-value dictionary and high-legibility Telugu typography (e.g. Noto Sans Telugu).
 
 ### D13: Operating Jurisdiction (Andhra Pradesh, India)
-- **Rationale**: Insecticides Act retail licensing, state quality-control inspections, and agricultural department reporting guidelines are state-specific under the Government of Andhra Pradesh.
+- **Rationale**: Agrochemical retail licensing, state quality-control inspections, and agricultural department reporting guidelines are state-specific under the Government of Andhra Pradesh.
 
 ### D14: Environment Separation
 - **Rationale**: Strict isolation between staging/testing and live customer orders, financial ledger entries, and live inventory counts.
@@ -107,24 +110,46 @@ This document records the foundational product and architectural decisions for *
 - **Rationale**: Point-in-time recovery (PITR) and daily automated database backups are indispensable for production financial ledgers, preventing catastrophic data loss from human error or operational failure.
 
 ### D18: Business and Product Scope
-- **Rationale**: Crop protection chemicals (pesticides) constitute a distinct, highly regulated vertical under the Insecticides Act, 1968. Excluded from scope: chemical fertilizers, bio-fertilizers, seeds, subsidized inputs (such as Urea, DAP, MOP), and government Point-of-Sale (PoS) biometric Direct Benefit Transfer (DBT) systems. Focus is exclusively on retail pesticides.
+- **Rationale**: Vighnesh AgroCare retails crop-protection and crop-nutrition products: pesticides, plant growth regulators (PGRs), and micronutrients. Excluded from scope: bulk fertilizers (such as bulk NPK, Urea, DAP), seeds, subsidized agricultural inputs, and government Point-of-Sale (PoS) biometric Direct Benefit Transfer (DBT) systems. Focus is strictly on retail agrochemicals.
 - **Status**: Confirmed.
 
 ### D19: Initial Product Categories
-- **Rationale**: Crop protection chemicals are classified by target pest, weed, or pathogen. Initial categories are configurable in the database to accommodate shop inventory needs.
-- **Categories**: Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides.
+- **Rationale**: Agrochemical products are categorized by target pest/function or nutritional mode. Initial categories are configurable in the database to accommodate shop inventory needs.
+- **Categories**: Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides, Plant Growth Regulators, Micronutrients.
 - **Implementation**: Stored in a configurable `categories` database table so the shop owner can manage categories without code changes.
 - **Status**: Confirmed.
 
-### D20: Pesticide Regulatory & Product Data Fields
-- **Rationale**: Under the Insecticides Act, 1968 and Insecticides Rules, 1971, agrochemical products must be strictly identified by approved technical formulations, manufacturer credentials, toxicity hazard levels, and batch lifecycles.
-- **Specification**: Product records must support:
-  - CIB&RC registration number (Central Insecticides Board & Registration Committee)
+### D20: Product Regulatory & Technical Data Fields
+- **Rationale**: Agrochemical products must be clearly identified by approved registration credentials, manufacturer details, technical formulations, toxicity hazard ratings, and batch lifecycles.
+- **Specification**: Product records support:
+  - Registration / Licence number (CIB&RC registration number or other applicable state registration)
   - Manufacturer name
-  - Technical name (active ingredient, e.g. Chlorpyrifos 20% EC, Imidacloprid 17.8% SL)
-  - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP)
-  - Toxicity colour class (Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
+  - Technical name / active ingredient / chemical composition (e.g. *Imidacloprid 17.8% SL*, *Gibberellic Acid 0.001% L*, *Chelated Zinc 12%*)
+  - Formulation type (e.g. EC, WP, SC, SL, GR, WG, SP, Liquid)
+  - Toxicity colour class (where applicable: Red: Extremely Toxic, Yellow: Highly Toxic, Blue: Moderately Toxic, Green: Slightly Toxic)
   - Batch number
   - Manufacturing date
   - Expiry date
 - **Status**: Provisional. Exact legally required fields TO BE VERIFIED WITH DEPARTMENT OF AGRICULTURE, ANDHRA PRADESH.
+
+### D21: Customer Data Access Restriction
+- **Rationale**: Inventory depth, wholesale purchase costs, supplier margins, and farmer identity/order records are sensitive commercial and private data.
+- **Implementation**: Public and customer endpoints expose only product name, price (MRP and selling price), product images, product details (composition, formulation, dosage/safety instructions as entered), availability status (`In Stock`, `Low Stock`, `Out of Stock`), booking options, accepted payment options, and the customer's own booking history. Exact physical or reserved stock counts, purchase costs, supplier details, and other customers' data are strictly inaccessible.
+- **Status**: Confirmed.
+
+### D22: Admin-Only Analytics & Operational Reporting
+- **Rationale**: Effective store management requires visibility into sales velocity, customer purchase trends, and regulatory compliance while maintaining strict role boundaries.
+- **Specification**: The admin dashboard provides:
+  - Customer purchase history (searchable by customer name, mobile number, line items, and invoice totals)
+  - Best-selling products by volume and revenue
+  - Remaining stock counts across all active SKUs
+  - Automated visual low-stock warnings
+  - Upcoming chemical expiry alerts
+  - Sales, purchase, and gross-profit reports
+  - CSV export capabilities for all tabular reports
+- **Status**: Confirmed.
+
+### D23: Payment Options in Initial Release
+- **Rationale**: Rural farmers in Andhra Pradesh primarily settle agrochemical transactions at the counter (cash or store UPI QR) or upon village handover, rather than pre-paying through complex payment gateway redirects.
+- **Implementation**: In the customer booking UI, customers view accepted payment options: "Pay at Shop" (Counter Pickup) and "Cash on Delivery" (Local Delivery). Store staff records actual payment method (Cash, UPI, Udhaar credit) and payment status upon order settlement. Automated third-party online payment gateway integration is deferred to a future phase.
+- **Status**: Confirmed.

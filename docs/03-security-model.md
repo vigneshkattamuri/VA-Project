@@ -3,10 +3,10 @@
 ## 1. Role-Based Access Control (RBAC) Overview
 
 The system strictly enforces the principle of least privilege across all user tiers. There are four discrete system roles:
-1. **`admin`**: Store owner / primary manager. Unrestricted administrative and financial authority.
-2. **`employee`**: Shop counter sales assistant. Operates counter billing, searches catalog, views stock availability, fulfills customer bookings. Prohibited from viewing purchase costs, supplier records, margins, and profit analytics.
+1. **`admin`**: Store owner / primary manager. Unrestricted administrative, financial, operational, and reporting authority.
+2. **`employee`**: Shop counter sales assistant. Operates counter billing, searches catalog, views stock availability, fulfills customer bookings. Strictly prohibited from viewing purchase costs, supplier records, margins, customer-wide purchase analytics, and profit reports.
 3. **`delivery`**: Field delivery agent. Dispatches and delivers local customer orders. Strictly limited to assigned delivery orders, customer address/contact, and marking delivery/payment status.
-4. **`customer`**: Retail buyer / local farmer. Can browse public catalog, manage personal cart, create bookings, view personal order history, and update personal profile.
+4. **`customer`**: Retail buyer / local farmer. Can browse public catalog, view availability status, manage personal cart, create bookings with privacy notice, view personal order history, and update personal profile.
 
 ---
 
@@ -14,27 +14,41 @@ The system strictly enforces the principle of least privilege across all user ti
 
 | Resource / Action | Customer | Employee | Delivery | Admin |
 | :--- | :---: | :---: | :---: | :---: |
-| **Product Catalog (Read)** | Yes | Yes | Yes | Yes |
+| **Product Catalog (Public Data per D21)** | Yes | Yes | Yes | Yes |
 | **Product Master (Create / Edit / Archive)** | No | No | No | Yes |
-| **Product Stock Counts (`available_stock`)** | Read (Public) | Read | Read | Read |
+| **Product Availability Status (`In Stock`/`Low`/`Out`)** | Read | Read | Read | Read |
+| **Exact Stock Counts (`physical_stock`, `reserved_stock`)** | **No (Blocked)** | Read | Read | Read |
 | **Inventory Movements Ledger (Read)** | No | No | No | Yes |
-| **Manual Stock Adjustments (`adjust_stock`)** | No | No | No | Yes |
+| **Stock Adjustments (`adjust_stock` with reason)** | No | No | No | Yes |
+| **Draft Purchases & Goods Receipt** | No | **No (Blocked)** | No | Yes |
 | **Suppliers Directory (Read / Write)** | No | **No (Blocked)** | No | Yes |
-| **Purchase Orders & Goods Receipt** | No | **No (Blocked)** | No | Yes |
-| **Product Cost Price / Purchase Invoices** | No | **No (Blocked)** | No | Yes |
-| **Sales Counter & Billing** | No | Yes | No | Yes |
+| **Product Purchase Costs / Supplier Invoices** | No | **No (Blocked)** | No | **Yes (Admin Only)** |
+| **Counter Sales & Billing (Name + Mobile)** | No | Yes | No | Yes |
+| **Customer Purchase History (Name, Mobile, Items, Bill)** | Own Only | No | No | **Yes (Admin Only)** |
+| **Best Sellers & Remaining Stock Analytics** | No | No | No | **Yes (Admin Only)** |
+| **Chemical Expiry & Low Stock Alerts** | No | Read | No | **Yes (Admin Only)** |
 | **Customer Credit Ledger (Udhaar) (Read)** | Own Balance | Read Balance | No | Full Read |
 | **Modify Customer Credit Limits** | No | No | No | Yes |
-| **Online Bookings (Create)** | Yes (Own / Guest) | Yes (Walk-in) | No | Yes |
+| **Online Bookings (Create with Privacy Notice)** | Yes (Own / Guest) | Yes (Walk-in) | No | Yes |
 | **Online Bookings (Transition / Fulfill)** | Cancel Own | Yes | Assigned Only | Yes |
 | **Delivery Orders (View & Dispatch)** | Own Orders | View All | Assigned Only | Full Control |
-| **Financial & Profit Reports** | No | **No (Blocked)** | No | Yes |
-| **Shop Settings (Licenses, Tax, Bank Info)** | Read Public Info | Read Public Info | Read Public Info | Full Control |
-| **User Role Assignment** | No | No | No | Yes |
+| **Financial, Profit & CSV Export Reports** | No | **No (Blocked)** | No | **Yes (Admin Only)** |
+| **Shop Settings (Licences, Tax, UPI Config)** | Read Public Info | Read Public Info | Read Public Info | Full Control |
+| **User Role Assignment** | No | No | No | **Yes (Admin Only)** |
 
 ---
 
-## 3. Role Assignment Security
+## 3. Customer Data Access Restrictions (Decision D21)
+
+To protect commercial store confidentiality and individual farmer privacy:
+- **Public & Customer Visibility Boundary**:
+  - Allowed: Product brand/trade name, retail price (selling price and printed MRP), product imagery, technical details (composition, formulation, shop-entered dosage/safety notes), availability status indicator (`In Stock`, `Low Stock`, `Out of Stock`), accepted payment methods ("Pay at Shop", "Cash on Delivery"), and the customer's own authenticated booking records.
+  - Prohibited: Numeric physical or reserved stock counts, wholesale acquisition costs, supplier identities, margins, and purchase histories of any other customers.
+- **Enforcement**: Public database views and PostgreSQL Row Level Security (RLS) policies omit sensitive columns from all public/anon queries.
+
+---
+
+## 4. Role Assignment Security
 
 - **Self-Assignment Prohibition**: Users can **never** assign or modify roles for themselves.
 - **Implementation**:
@@ -45,11 +59,11 @@ The system strictly enforces the principle of least privilege across all user ti
 
 ---
 
-## 4. PostgreSQL Row Level Security (RLS) Principles
+## 5. PostgreSQL Row Level Security (RLS) Principles
 
 1. **Default Deny Strategy**: Every single table created in the `public` schema has Row Level Security explicitly enabled (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`). No query returns data unless an explicit policy permits it.
 2. **Read-Only Inventory Exposure**:
-   - The public/customer tier only reads calculated `available_stock` through an API view or sanitized column.
+   - The public/customer tier only reads sanitized availability indicators through an API view.
    - Direct `INSERT`, `UPDATE`, or `DELETE` on `inventory_movements`, `product_stock`, `sales`, and `bookings` is completely denied to all client roles. All mutations must occur via validated PostgreSQL stored functions.
 3. **Data Isolation by Tenant / Customer**:
    - Customers can only query bookings, orders, and ledger entries matching their authenticated UID (`auth.uid() = user_id`).
@@ -59,7 +73,7 @@ The system strictly enforces the principle of least privilege across all user ti
 
 ---
 
-## 5. SECURITY DEFINER Stored Procedure Rules
+## 6. SECURITY DEFINER Stored Procedure Rules
 
 Because all core business logic is encapsulated in PostgreSQL stored functions executed with `SECURITY DEFINER` privileges, the following strict hardening guidelines are mandatory:
 
@@ -82,27 +96,28 @@ Because all core business logic is encapsulated in PostgreSQL stored functions e
 
 ---
 
-## 6. Personally Identifiable Information (PII) Protection
+## 7. Personally Identifiable Information (PII) Protection & Privacy Notice
 
-Pesticide retail involves sensitive customer personal data. The system categorizes and protects PII in accordance with Indian Digital Data Protection standards:
+Agrochemical retail involves customer personal data regulated under the **Digital Personal Data Protection Act, 2023**:
 
 ### Identified PII Data Elements
 - Customer Full Name
 - Primary Mobile Phone Number
 - Village, Mandal, and District Details
 - Street / Farm Delivery Address
-- Purchase & Consumption History (crop types and pesticide usage)
+- Purchase & Consumption History (crop types and chemical usage)
 - Credit Ledger Balances (Udhaar financial standing)
 
-### Safeguards
-- PII is restricted to store staff with an operational need.
-- Delivery agents only receive customer name, phone, and delivery address for active dispatches; once delivered, historical contact details are masked.
-- Customer credit balances are considered sensitive financial data and are hidden from public and delivery views.
-- No PII is logged in application error trackers or client console outputs.
+### Safeguards & Statutory Privacy Notice
+- **Statutory Privacy Notice at Booking**: Whenever customer name and mobile number are collected (guest booking or registered checkout), a clear privacy notice explains that data is collected solely for order reservation, counter billing, and local delivery fulfillment.
+- **Operational Need Isolation**: PII is restricted to store staff with an active operational need.
+- **Delivery Agent Data Masking**: Delivery agents only receive customer name, phone, and delivery address for active dispatches; once delivered, historical contact details are masked.
+- **Financial Privacy**: Customer credit balances are considered sensitive financial data and are hidden from public and delivery views.
+- **Zero Log Leakage**: No PII is logged in application error trackers or client console outputs.
 
 ---
 
-## 7. Progressive Web App (PWA) Caching Rules
+## 8. Progressive Web App (PWA) Caching Rules
 
 To ensure client data privacy and prevent sensitive leakage on shared or public mobile devices:
 

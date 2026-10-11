@@ -37,12 +37,13 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ---
 
 ### Phase 4: Database Schema & Supabase Migrations
-- **Goal**: Author reproducible SQL migrations defining tables, relations, constraints, and audit columns for retail pesticides.
+- **Goal**: Author reproducible SQL migrations defining tables, relations, constraints, and audit columns for retail agrochemicals (pesticides, PGRs, micronutrients).
 - **Acceptance Criteria**:
-  - [ ] Migrations for `products` (including CIB&RC registration, active ingredient, formulation, toxicity colour class, batch/mfg/expiry), `product_stock`, `inventory_movements`, `suppliers`, `purchases`, `sales`, `bookings`, `customer_credit_ledger`, and `shop_settings`.
-  - [ ] Revisit batch-level stock model per Decision D02.
+  - [ ] Migrations for `products` supporting statutory fields per D20: registration/licence number (CIB&RC or applicable), manufacturer, technical name/composition, formulation, toxicity colour class (where applicable), batch number, manufacturing date, and expiry date.
+  - [ ] Revisit batch-level stock model per Decision D02 (Provisional).
+  - [ ] Tables for `product_stock`, `inventory_movements`, `suppliers`, `purchases` (with draft status), `sales`, `bookings`, `customer_credit_ledger`, and `shop_settings`.
   - [ ] Constraints enforced (`selling_price <= mrp`, `physical_stock >= 0`, `reserved_stock >= 0`).
-  - [ ] Append-only movement types defined.
+  - [ ] Append-only movement types defined, with mandatory reason note requirement for stock adjustments.
   - [ ] Migration applied cleanly to local/development Supabase instance.
 
 ---
@@ -54,28 +55,28 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
   - [ ] Separate `user_roles` table with `admin`, `employee`, `delivery`, `customer` assignments.
   - [ ] RLS policies enabled on all tables; default deny verified.
   - [ ] Employees blocked from viewing purchase costs, supplier records, and profit reports.
-  - [ ] Customers restricted strictly to their own data.
+  - [ ] Customers restricted strictly to their own data per D21 (no access to raw stock counts, costs, or other customers' data).
 
 ---
 
 ### Phase 6: Customer Home & Product Catalog
-- **Goal**: Deliver a high-performance, mobile-first crop protection browsing experience in English and Telugu.
+- **Goal**: Deliver a high-performance, mobile-first crop protection and nutrition browsing experience in English and Telugu.
 - **Acceptance Criteria**:
-  - [ ] Categorized browsing (Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides).
-  - [ ] Pack size selector per product card with dynamic MRP and selling price display.
-  - [ ] Real-time available stock badges (`In Stock`, `Low Stock`, `Out of Stock`).
-  - [ ] Search and filter by brand, crop, pest, formulation, and toxicity class.
-  - [ ] Strict display of shop-entered safety and label instructions without automated claims.
+  - [ ] Categorized browsing across 9 initial database-configurable categories (per D19): Insecticides, Fungicides, Herbicides, Acaricides, Nematicides, Rodenticides, Bio-pesticides, Plant Growth Regulators, Micronutrients.
+  - [ ] Customer-facing data boundary strictly enforced per D21: product name, price, images, product details, availability status badge (`In Stock`, `Low Stock`, `Out of Stock`), booking option, accepted payment options, and own booking history. Never expose raw numerical stock counts, supplier costs, or other customers' data.
+  - [ ] Pack size selector per product card with dynamic MRP and selling price display (`selling_price <= mrp`).
+  - [ ] Search and filter by brand, category, formulation, and toxicity class.
+  - [ ] Safety and label information displayed strictly as entered by the shop, with no system-generated claims about efficacy, safety, or crop suitability.
 
 ---
 
 ### Phase 7: Admin Product & Category Management
-- **Goal**: Build management interfaces for creating, editing, and categorizing sellable pesticide products and pack sizes.
+- **Goal**: Build management interfaces for creating, editing, and categorizing sellable agrochemical products and pack sizes.
 - **Acceptance Criteria**:
-  - [ ] Admin forms to create and edit products with independent pack sizes and D20 statutory fields.
-  - [ ] Product-level flags: `allow_online_booking`, `allow_home_delivery` (defaults to false), `requires_manual_review`.
+  - [ ] Admin forms to create and edit products with independent pack sizes and statutory fields per D20 (registration/licence no., manufacturer, composition, formulation, toxicity colour class, batch no., mfg date, expiry date).
+  - [ ] Product-level flags: `allow_online_booking`, `allow_home_delivery` (defaults to `false` for every product per D15), `requires_manual_review`.
   - [ ] MRP and selling price validation rules (`selling_price <= mrp`).
-  - [ ] Category and target pest tag management screens.
+  - [ ] Category and target pest/application tag management screens.
 
 ---
 
@@ -83,7 +84,7 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 - **Goal**: Deliver store inventory overview, stock adjustment interface, and audit trail ledger.
 - **Acceptance Criteria**:
   - [ ] Real-time inventory table showing physical, reserved, and available stock.
-  - [ ] Stock adjustment modal triggering `adjust_stock` function (`adjustment_in`, `adjustment_out`, `damage`, `expiry`).
+  - [ ] Stock adjustment modal triggering `adjust_stock` function (`adjustment_in`, `adjustment_out`, `damage`, `expiry`) with mandatory audit reason note.
   - [ ] Filterable audit history view of the immutable `inventory_movements` ledger.
   - [ ] Automated visual low-stock warnings.
 
@@ -92,28 +93,30 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 ### Phase 9: Supplier Management
 - **Goal**: Create protected supplier master directory for store administration.
 - **Acceptance Criteria**:
-  - [ ] CRUD operations for licensed pesticide manufacturers and authorized distributors.
+  - [ ] CRUD operations for licensed agrochemical manufacturers and authorized distributors.
   - [ ] Storage of legal trade name, GSTIN, primary contacts, and credit terms.
   - [ ] Strict RLS enforcement ensuring supplier data is inaccessible to `employee` and `delivery` roles.
 
 ---
 
-### Phase 10: Purchases & Goods Receipt
-- **Goal**: Implement purchase consignment ingestion, batch/expiry logging, and automated WAC recalculation.
+### Phase 10: Purchases & Goods Receipt (Stock Upload Workflow)
+- **Goal**: Implement stock upload workflow: draft purchase orders, goods receipt with batch/expiry logging, adjustments with reason, and automated WAC recalculation.
 - **Acceptance Criteria**:
-  - [ ] Purchase goods receipt screen recording supplier invoice, items, quantities, and cost prices.
-  - [ ] Mandatory capture of manufacturer batch number and expiry date per line item.
-  - [ ] Backend execution of `receive_purchase` function updating physical stock and Weighted Average Cost.
+  - [ ] Draft purchase order management: create, review, update, or discard draft purchase bills without affecting live inventory.
+  - [ ] Goods receipt screen against draft purchases: mandatory capture of batch number, manufacturing date, and expiry date per line item (per D20).
+  - [ ] Backend execution of atomic `receive_purchase` function updating physical stock, appending audit ledger movements, and recalculating Weighted Average Cost.
   - [ ] Purchase history and invoice archives (Admin only).
 
 ---
 
 ### Phase 11: Shopping Cart & Customer Checkout Flow
-- **Goal**: Build a persistent client-side cart and checkout flow supporting pickup and local delivery options.
+- **Goal**: Build a persistent client-side cart and checkout flow supporting store pickup, conditional local delivery, accepted payment disclosures, and statutory privacy notices.
 - **Acceptance Criteria**:
   - [ ] Cart drawer/view with live stock checks against `available_stock`.
   - [ ] Selection between Store Pickup and Home/Village Delivery (conditioned on `allow_home_delivery`).
-  - [ ] Guest checkout flow requiring Name, Phone, and Village with CAPTCHA rate-limiting.
+  - [ ] Guest checkout flow requiring Customer Name and Mobile Number with rate limiting.
+  - [ ] Statutory privacy notice displayed prominently at booking for collected customer name and mobile number under the Digital Personal Data Protection Act, 2023.
+  - [ ] Accepted payment options displayed clearly per D23 (Pay at Shop, Cash on Delivery; online gateway deferred).
   - [ ] Clear order summary displaying tax-inclusive pricing.
 
 ---
@@ -139,13 +142,14 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 
 ---
 
-### Phase 14: Sales, Invoicing & Payments
-- **Goal**: Build rapid counter sales billing interface with multiple payment modes and thermal receipt generation.
+### Phase 14: Counter Sales, Invoicing & Payments
+- **Goal**: Build rapid counter sales billing interface with customer name/mobile capture, payment recording, and thermal receipt generation.
 - **Acceptance Criteria**:
-  - [ ] Fast item lookup and barcode/SKU selection for walk-in counter sales.
+  - [ ] Fast item lookup and SKU selection for walk-in counter sales.
+  - [ ] Billing workflow capturing Customer Name and Mobile Number on sales receipts.
+  - [ ] Admin records payment method (Cash, UPI QR, Split Tender) and status per D23.
   - [ ] Conversion of online bookings into finalized sales.
   - [ ] Atomic `complete_sale` execution validating `selling_price <= mrp`.
-  - [ ] Support for Cash, UPI QR, and Split Tender.
   - [ ] Formatted 3-inch (80mm) thermal receipt view and printable bill.
 
 ---
@@ -160,13 +164,14 @@ This roadmap outlines the 20 structured implementation phases for **Vighnesh Agr
 
 ---
 
-### Phase 16: Business Reports & Financial Analytics
-- **Goal**: Provide daily reconciliation, inventory valuation, and gross margin reporting.
+### Phase 16: Admin Business Reports & Analytics
+- **Goal**: Provide admin-only business intelligence, customer purchase history, inventory valuation, and CSV export per D22.
 - **Acceptance Criteria**:
-  - [ ] Daily sales report with breakdown by payment mode (Cash, UPI, Credit).
-  - [ ] Inventory valuation calculated using live Weighted Average Cost (WAC).
-  - [ ] Gross profit report `(Selling Price - WAC) * Qty` strictly protected for `admin`.
-  - [ ] Aging list of outstanding Customer Credit (Udhaar) balances.
+  - [ ] Admin customer purchase view: search customer purchase history (customer name, mobile number, purchased items, total bill, date).
+  - [ ] Best sellers and sales volume analytics per category/product.
+  - [ ] Remaining stock, low stock alert list, and batch expiry tracking report.
+  - [ ] Financial reports: daily sales, purchase totals, and gross profit `(Selling Price - WAC) * Qty` strictly protected for `admin`.
+  - [ ] CSV export functionality for all sales, purchases, customer history, and stock reports.
 
 ---
 
